@@ -1,16 +1,18 @@
 <template>
-  <div class="container" style="margin-top: 25px;">
+  <div class="container " style="margin-top: 25px;">
     <div class="row gy-5">
       <div class="col-sm-4"
       v-for="item of items"
       :key="item.id"
       >
-        <div class="card" style="width: 18rem">
+        <div class="card" style="width: 18rem; cursor: pointer;"
+        @click="this.$router.push('/items/'+item.id)"
+        >
           <img :src="getPathImage(item.img)" class="card-img-top" alt="..." />
           <div class="card-body">
-            <h5 class="card-title">{{ item.name }}</h5>
+            <h5 class="card-title">{{ item.title }}</h5>
             <p class="card-text">
-              {{ item.des }}
+              {{ item.subtitle }}
             </p>
           </div>
         </div>
