@@ -5,11 +5,10 @@
     <div class="row justify-content-center">
       <div class="col-md-8 col-lg-6 col-xl-4">
         <div class="card text-black">
-          <i class="fab fa-apple fa-lg pt-3 pb-1 px-3"></i>
           <img
             :src="getPathImage(item.img)"
             class="card-img-top"
-            alt="Apple Computer"
+            alt=""
           />
           <div class="card-body">
             <div class="text-center">

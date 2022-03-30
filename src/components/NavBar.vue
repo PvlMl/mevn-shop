@@ -7,6 +7,9 @@
       <router-link to="/" class="navbar-brand warning"
       style="color: #FFBB40"
        href="#">My Site</router-link>
+       <router-link to="/add" class="navbar-brand warning"
+      style="color: #FFBB40"
+       href="#">Add item</router-link>
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <form class="d-flex mx-auto">
           <input

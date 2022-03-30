@@ -1,10 +1,11 @@
 const http = require('http');
-const fs = require('fs')
+const fs = require('fs');
+const busboy = require('busboy');
 
 http.createServer((req, res) => {
+       res.setHeader('Access-Control-Allow-Origin', '*');
         if(req.url === '/'){
           res.setHeader('Content-Type', 'application/json');
-          res.setHeader('Access-Control-Allow-Origin', '*');
         fs.readFile('./items.json', (err, items) => {
           if(err){
             res.statusCode = 404;
@@ -16,7 +17,6 @@ http.createServer((req, res) => {
         }
         else if(/\/items\/\d+/.test(req.url)){
           res.setHeader('Content-Type', 'application/json');
-          res.setHeader('Access-Control-Allow-Origin', '*');
           fs.readFile('./items.json', 'utf-8', (err, items) => {
             if(err){
               res.statusCode = 404;
@@ -31,7 +31,6 @@ http.createServer((req, res) => {
         }
        else if(/\/images\/\d+\.jpg/.test(req.url)){
           res.setHeader('Content-Type', 'image/jpeg');
-          res.setHeader('Access-Control-Allow-Origin', '*');
           fs.readFile('.' + req.url, (err, image) => {
             if(err){
               res.statusCode = 404;
@@ -41,24 +40,54 @@ http.createServer((req, res) => {
           res.end(image);
           })
         } 
-        else if (req.url === '/add'){
-          let data = [];
-          req.on("data", chunk => {
-              data.push(chunk);
-              console.log(1)
+        else if (req.method === 'POST') {
+          console.log('POST request');
+          const bb = busboy({ headers: req.headers });
+          bb.on('file', (name, file, info) => {
+            const { filename, encoding, mimeType } = info;
+            console.log(
+              `File [${name}]: %j, %j, %j`,
+              filename,
+              encoding,
+              mimeType
+            );
+            
+            file.on('data', (data) => {
+              console.log(`File [${name}] got ${data.length} bytes`);
+              arr.push(data);
+            }).on('close', () => {
+              console.log(`File [${name}] done`);
+            });
           });
-           req.on("end", () => {
-             const image = Buffer.concat(data)
-             fs.writeFileSync("./test/111.jpg", image, function(error){
+          let arr = [];
+          let obj = {};
+          bb.on('field', (name, val) => {
+            obj[name] = val;
+          });
+          bb.on('close', () => {
+            console.log('Done parsing form!');
+            res.writeHead(303, { Connection: 'close', Location: '/' });
+            res.end();
+            fs.readFile('./items.json', 'utf-8', (err, items) => {
+              if(err){
+                res.statusCode = 404;
+                res.end("Resourse not found!");
+              }
+              const parsedItems = JSON.parse(items);
+              let id = parsedItems[parsedItems.length-1].id+1;
+              obj.id = id;
+              obj["img"] = `${id}.jpg`
+              parsedItems.push(obj)
+              fs.writeFile("./items.json", JSON.stringify(parsedItems), function(error){
+                if(error) throw error;
+            });
+            fs.writeFileSync(`./images/${id}.jpg`, Buffer.concat(arr), function(error){
               if(error) throw error; // если возникла ошибка
               console.log("Асинхронная запись файла завершена");
           });
-           })
+            })
+          });
+          req.pipe(bb);
         }
-        
-         else {
-          res.statusCode = 404;
-              res.end("Wrong url");
-        }
-  }).listen(3000);
+      }).listen(3000);
 
