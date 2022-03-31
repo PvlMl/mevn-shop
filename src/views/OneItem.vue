@@ -23,6 +23,9 @@
             <div class="d-flex justify-content-between total font-weight-bold mt-4">
               <span>Price</span><span>{{item.price}}</span>
             </div>
+            <button type="button" class="btn btn-danger mt-4"
+            @click="deleteItem(item.id)"
+            >Delete item</button>
           </div>
         </div>
       </div>
@@ -39,7 +42,7 @@ export default {
   },
  data(){
    return {
-     item: []
+     item: {}
    }
  },
  mounted() {
@@ -50,6 +53,13 @@ export default {
  methods: {
     getPathImage(url){
      return this.$options.URL + '/images/' + url;
+    },
+    deleteItem(id){
+     fetch(this.$options.URL + '/delete', {
+       method: 'POST',
+       body: id
+     });
+     this.$router.push('/')
     }
   }
 }

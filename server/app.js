@@ -4,6 +4,8 @@ const busboy = require('busboy');
 
 http.createServer((req, res) => {
        res.setHeader('Access-Control-Allow-Origin', '*');
+       res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+       res.setHeader('Access-Control-Allow-Headers', '*');
         if(req.url === '/'){
           res.setHeader('Content-Type', 'application/json');
         fs.readFile('./items.json', (err, items) => {
@@ -40,7 +42,7 @@ http.createServer((req, res) => {
           res.end(image);
           })
         } 
-        else if (req.method === 'POST') {
+        else if (req.method === 'POST' && req.url === '/add') {
           console.log('POST request');
           const bb = busboy({ headers: req.headers });
           bb.on('file', (name, file, info) => {
@@ -62,6 +64,7 @@ http.createServer((req, res) => {
           let arr = [];
           let obj = {};
           bb.on('field', (name, val) => {
+            obj.id = null;
             obj[name] = val;
           });
           bb.on('close', () => {
@@ -78,7 +81,7 @@ http.createServer((req, res) => {
               obj.id = id;
               obj["img"] = `${id}.jpg`
               parsedItems.push(obj)
-              fs.writeFile("./items.json", JSON.stringify(parsedItems), function(error){
+              fs.writeFile("./items.json", JSON.stringify(parsedItems,"",4), function(error){
                 if(error) throw error;
             });
             fs.writeFileSync(`./images/${id}.jpg`, Buffer.concat(arr), function(error){
@@ -88,6 +91,25 @@ http.createServer((req, res) => {
             })
           });
           req.pipe(bb);
+        } 
+        else if(req.method === 'POST' && req.url === '/delete'){
+            let idToDelete = null;
+            req.on('data', function (data) {
+              idToDelete = data;
+          });
+          req.on('end', function () {
+            fs.readFile('./items.json', 'utf-8', (err, items) => {
+              if(err){
+                res.statusCode = 404;
+                res.end("Resourse not found!");
+              }
+              let parsedItems = JSON.parse(items);
+              parsedItems = parsedItems.filter(i => i.id != idToDelete)
+              fs.writeFile("./items.json", JSON.stringify(parsedItems,"",4), function(error){
+                if(error) throw error;
+            });
+            })
+        });
         }
       }).listen(3000);
 
