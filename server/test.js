@@ -1,58 +1,63 @@
-const http = require('http');
-const fs = require('fs');
-const busboy = require('busboy');
+ const { MongoClient, ObjectId: objectId } = require("mongodb");
+const express = require("express");
+const app = express();
+const busboy = require("busboy"); 
+const cors = require("cors");
 
-http.createServer((req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method === 'POST') {
-    console.log('POST request');
-    const bb = busboy({ headers: req.headers });
-    bb.on('file', (name, file, info) => {
-      const { filename, encoding, mimeType } = info;
-      console.log(
-        `File [${name}]: %j, %j, %j`,
-        filename,
-        encoding,
-        mimeType
-      );
-      
-      file.on('data', (data) => {
-        console.log(`File [${name}] got ${data.length} bytes`);
-        arr.push(data);
-      }).on('close', () => {
-        console.log(`File [${name}] done`);
-      });
-    });
-    let arr = [];
-    let obj = {};
-    bb.on('field', (name, val) => {
-      obj[name] = val;
-    });
-    bb.on('close', () => {
-      console.log('Done parsing form!');
-      res.writeHead(303, { Connection: 'close', Location: '/' });
-      res.end();
-      fs.readFile('./items.json', 'utf-8', (err, items) => {
-        if(err){
-          res.statusCode = 404;
-          res.end("Resourse not found!");
-        }
-        const parsedItems = JSON.parse(items);
-        let id = ++parsedItems[parsedItems.length-1].id;
-        obj.id = id;
-        obj["img"] = `${id}.jpg`
-        parsedItems.push(obj)
-        fs.writeFile("./items.json", JSON.stringify(parsedItems), function(error){
-          if(error) throw error;
-      });
-      fs.writeFileSync(`./images/${id}.jpg`, Buffer.concat(arr), function(error){
-        if(error) throw error; // если возникла ошибка
-        console.log("Асинхронная запись файла завершена");
-    });
-      })
-    });
-    req.pipe(bb);
-  }
-}).listen(3000, () => {
-  console.log('Listening for requests');
+app.use(cors());
+    
+const url = "mongodb://localhost:27017/";
+const mongoClient = new MongoClient(url);
+let dbClient;
+  
+mongoClient.connect((err, client) => {
+   if(err) return console.log(err);
+   dbClient = client;
+   app.locals.collection = client.db("usersdb").collection("items");
+   app.listen(3000, function(){
+       console.log("Сервер ожидает подключения...");
+   });
+});
+
+app.get("/", (req, res) => {
+   const collection = app.locals.collection;
+   collection.find({}).toArray((err, items) => {
+       if(err) console.log(err);
+       res.send(items);
+   })
+});
+
+app.get("/items/:id", (req, res) => {
+   const id = new objectId(req.params.id);
+   const collection = req.app.locals.collection;
+   collection.find({_id: id}).toArray((err, items) => {
+       if(err) console.log(err);
+       res.send(items[0]);
+   })
+});
+
+app.post('/add', function (req, res) {
+   const collection = app.locals.collection;
+   const item = {};
+   const bb = busboy({ headers: req.headers });
+   bb.on('field', (name, val) => {
+       item[name] = val;
+   });
+   bb.on('close', () => {
+      collection.insertOne(item, function(err, result){
+         if(err){ 
+             return console.log(err);
+         }
+         console.log(result);
+         console.log(item);
+     })
+       res.writeHead(303, { Connection: 'close', Location: '/' });
+       res.end();
+     });
+   req.pipe(bb);
+})
+
+process.on("SIGINT", () => {
+   dbClient.close();
+   process.exit();
 });

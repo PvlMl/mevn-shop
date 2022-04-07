@@ -28,7 +28,13 @@
   ref="file" @change="handleFileUpload()"
   >
 </div>
+  <div class="spinner-border m-5" role="status"
+            v-if="adding"
+            >
+              <span class="sr-only"></span>
+            </div>
 <input type="submit" name="button" class="btn btn-success" id="sendMail" value="Send"
+v-else
 />
 </form>
 </div>
@@ -39,17 +45,27 @@ export default {
 components: {
      NavBar
   },
+  data(){
+   return {
+     adding: false
+   }
+  },
 methods: {
   handleFileUpload(){
     this.file = this.$refs.file.files[0];
   },
   submitFile(){
+   // this.adding = true;
     const formData = new FormData(this.$refs.formElem);
     fetch("http://localhost:3000/add",{
       method: 'POST',
       body: formData 
     })
-    console.log(formData)
+    console.log(formData);
+    // setTimeout(() => {
+    //   this.adding = false;
+    //    this.$router.push('/')
+    //    }, 1000)
   }
 }
 }

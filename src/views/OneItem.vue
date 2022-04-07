@@ -1,15 +1,17 @@
 <template>
 <nav-bar />
 <section style="background-color: #eee;">
-  <div class="container py-5">
+  <div class="container py-5"
+  v-if="item"
+  >
     <div class="row justify-content-center">
       <div class="col-md-8 col-lg-6 col-xl-4">
         <div class="card text-black">
-          <img
+          <!-- <img
             :src="getPathImage(item.img)"
             class="card-img-top"
             alt=""
-          />
+          /> -->
           <div class="card-body">
             <div class="text-center">
               <h5 class="card-title">{{item.title}}</h5>
@@ -23,7 +25,13 @@
             <div class="d-flex justify-content-between total font-weight-bold mt-4">
               <span>Price</span><span>{{item.price}}</span>
             </div>
+            <div class="spinner-border m-5" role="status"
+            v-if="removal"
+            >
+              <span class="sr-only"></span>
+            </div>
             <button type="button" class="btn btn-danger mt-4"
+            v-else
             @click="deleteItem(item.id)"
             >Delete item</button>
           </div>
@@ -42,26 +50,33 @@ export default {
   },
  data(){
    return {
-     item: {}
+     item: null,
+     removal: false
    }
  },
  mounted() {
-   fetch(this.$options.URL + "/items/" + this.$route.params.id)
-   .then(res => res.json())
-   .then(res => this.item = res)
+   this.getItem();
  },
  methods: {
-    getPathImage(url){
+   getItem(){
+    fetch(this.$options.URL + "/items/" + this.$route.params.id)
+   .then(res => res.json())
+   .then(res => this.item = res)
+   },
+   getPathImage(url){
      return this.$options.URL + '/images/' + url;
     },
-    deleteItem(id){
-     fetch(this.$options.URL + '/delete', {
-       method: 'POST',
-       body: id
+   deleteItem(id){
+     this.removal = true;
+     fetch(this.$options.URL + `/delete/${id}`, {
+       method: 'DELETE',
      });
-     this.$router.push('/')
+     setTimeout(() => {
+      this.removal = false;
+       this.$router.push('/')
+       }, 1000)
     }
-  }
+  },
 }
 </script>
 

@@ -6,9 +6,9 @@
       :key="item.id"
       >
         <div class="card" style="width: 18rem; cursor: pointer;"
-        @click="this.$router.push('/items/'+item.id)"
+        @click="this.$router.push('/items/'+item._id)"
         >
-          <img :src="getPathImage(item.img)" class="card-img-top" alt="..." />
+          <!-- <img :src="getPathImage(item.img)" class="card-img-top" alt="..." /> -->
           <div class="card-body">
             <h5 class="card-title">{{ item.title }}</h5>
             <p class="card-text">
@@ -30,15 +30,19 @@ export default {
     }
   },
   mounted(){
-   fetch(this.$options.URL)
-   .then(res => res.json())
-   .then(res => this.items = res)
+   this.getItems();
   },
   methods: {
     getPathImage(url){
      return this.$options.URL + '/images/' + url;
+    },
+    getItems(){
+    fetch(this.$options.URL)
+   .then(res => res.json())
+   .then(res => this.items = res)
     }
-  }
+  },
+   
  
 }
 </script>

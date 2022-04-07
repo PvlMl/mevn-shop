@@ -3,8 +3,16 @@
         "id": 1,
         "title": "Card1",
         "subtitle": "subtitle1",
-        "description": "lorem huiorem",
+        "description": "lorem",
         "price": "123",
         "img": "1.jpg"
+    },
+    {
+        "id": 2,
+        "title": "t2",
+        "subtitle": "s2",
+        "description": "dfg",
+        "price": "1 500",
+        "img": "2.jpg"
     }
 ]
