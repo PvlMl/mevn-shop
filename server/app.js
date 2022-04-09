@@ -1,62 +1,49 @@
+const mongoose = require("mongoose");
 const express = require("express");
+const Schema = mongoose.Schema;
 const app = express();
-const items = require("./items.json");
-const busboy = require("busboy"); 
 const cors = require("cors");
-const fs = require("fs");
+const busboy = require("busboy"); 
 
 app.use(cors());
 
-app.get("/",function (req, res) {
-  res.send(items)
+const itemScheme = new Schema({
+    title: String,
+    subtitle: String,
+    description: String,
+    price: Number
+}, {versionKey: false});
+
+const Item = mongoose.model("Item", itemScheme);
+
+mongoose.connect("mongodb://localhost:27017/itemsdb", { useUnifiedTopology: true, useNewUrlParser: true}, function(err){
+    if(err) return console.log(err);
+    app.listen(3000, function(){
+        console.log("Сервер ожидает подключения...");
+    });
 });
 
-app.get("/images/*.jpg", function (req, res) {
-  res.sendFile(__dirname + req.url);
-});
-
-app.get("/items/:id",function (req, res) {
-  res.send(items.find(i => i.id == req.params.id));
+app.get("/items", function(req, res){
+        
+    Item.find({}, function(err, users){
+ 
+        if(err) return console.log(err);
+        res.send(users)
+    });
 });
 
 app.post("/add", function (req,res) {
-  const arr = [];
-  const obj = {id: null}
-          const bb = busboy({ headers: req.headers });
-          bb.on('field', (name, val) => {
-            obj[name] = val;
-          });
-          bb.on('file', (name, file) => {
-            file.on('data', (data) => {
-              arr.push(data);
-            })
-          });
-          bb.on('close', () => {
-            res.writeHead(303, { Connection: 'close', Location: '/' });
-            res.end();
-              const parsedItems = items;
-              let id = parsedItems[parsedItems.length-1].id+1 || 1;
-              obj.id = id;
-              obj.img = `${id}.jpg`
-              parsedItems.push(obj)
-              fs.writeFile("./items.json", JSON.stringify(parsedItems,"",4), function(error){
-                if(error) throw error;
+    const itemData = {}
+            const bb = busboy({ headers: req.headers });
+            bb.on('field', (name, val) => {
+              itemData[name] = val;
             });
-            fs.writeFileSync(`./images/${id}.jpg`, Buffer.concat(arr), function(error){
-              if(error) throw error;
-          });
-          });
-
-      req.pipe(bb);
-});
-
-app.delete('/delete/:id', function (req, res) {
-  let parsedItems = items;
-  parsedItems = parsedItems.filter(i => i.id != req.params.id)
-  fs.writeFile("./items.json", JSON.stringify(parsedItems,"",4), function(error){
-    if(error) throw error;
-});
-  res.send('Got a DELETE request at /user');
-});
-
-app.listen(3000);
+            bb.on('close', () => {
+               const item = new Item(itemData);
+              item.save(function(err){
+                if(err) return console.log(err);
+                res.send(item);
+            });
+            });
+        req.pipe(bb);
+  });
